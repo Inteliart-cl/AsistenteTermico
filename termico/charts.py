@@ -17,10 +17,11 @@ def figure(raw: dict, roles: list[str], max_gap: float, smooth=True, connect_gap
             if previous is not None and (row.time-previous).total_seconds()>max_gap and not connect_gaps:
                 x.append(None); y.append(None)
             x.append(row.time); y.append(row.value); previous=row.time
+        unit = '°C' if role in ('PV', 'SP') else '%'
         fig.add_trace(go.Scatter(x=x,y=y,mode='lines',name=role,
             line=dict(color=COLORS[role],width=1.25,shape='spline' if smooth and role!='SP' else 'hv',
                       smoothing=0.35 if smooth and role!='SP' else 0),
-            connectgaps=False,hovertemplate='%{x|%d/%m %H:%M:%S}<br>%{y:.2f}<extra>'+role+'</extra>'))
+            connectgaps=False,hovertemplate=role+': %{y:.2f} '+unit+'<extra></extra>'))
     if 'PV' in roles:
         fig.add_hline(y=critical,line_dash='dot',line_color='#CC7A61',line_width=1,
                       annotation_text=f'Atención: {critical:g} °C',annotation_position='top left')
