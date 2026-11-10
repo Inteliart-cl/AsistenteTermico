@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [{
+    "name": "Asistente térmico · Streamlit",
+    "type": "debugpy",
+    "request": "launch",
+    "module": "streamlit",
+    "args": ["run", "app.py"],
+    "cwd": "${workspaceFolder}",
+    "console": "integratedTerminal",
+    "envFile": "${workspaceFolder}/.env"
+  }]
+}

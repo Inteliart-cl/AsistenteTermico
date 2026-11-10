@@ -1,0 +1,7 @@
+streamlit>=1.67,<2
+pandas>=2.2,<3
+plotly>=6,<7
+openai>=2,<3
+python-dotenv>=1,<2
+tzdata>=2025.1
+truststore>=0.10,<1

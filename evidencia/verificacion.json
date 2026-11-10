@@ -1,0 +1,41 @@
+{
+  "fecha": "2026-11-09T22:43:58.759300-03:00",
+  "pruebas": "...............                                                          [100%]\n15 passed in 15.58s",
+  "archivos": 291,
+  "batches": [
+    {
+      "batch": "26304",
+      "count": 5786
+    },
+    {
+      "batch": "26310",
+      "count": 7029
+    },
+    {
+      "batch": "26316",
+      "count": 2052
+    }
+  ],
+  "metricas_batch_26310": {
+    "total_hours": 108.19916666666667,
+    "evaluable_hours": 0.2752777777777778,
+    "pv_coverage_pct": 59.637705157926355,
+    "joint_coverage_pct": 0.2544176505775101,
+    "off_hours": 0.0,
+    "unknown_hours": 107.92388888888888,
+    "within_pct": 46.92230070635721,
+    "mae": 1.3942893982349083,
+    "hot_minutes": 0.9166666666666666,
+    "curtain_hours": 0.05722222222222222,
+    "curtain_bad_minutes": 0.0,
+    "thermal_events": 0
+  },
+  "carga_local_segundos": 2.6207954999999856,
+  "optimizacion": {
+    "comparacion": "JSON de todas las muestras del batch frente a resumen de evidencia enviado a IA",
+    "json_muestras_bytes": 353076,
+    "json_resumen_bytes": 3006,
+    "reduccion_bytes_pct": 99.14862522516398
+  },
+  "api_real": "Pendiente de configurar y probar con la clave del usuario; contrato verificado con cliente simulado."
+}
