@@ -126,3 +126,56 @@ def test_real_batches():
     r=analyze(d,c[c.batch=='26310'].iloc[0],Rules())
     assert r['extrema']['PV']['max']==24.4
     assert 0<r['metrics']['joint_coverage_pct']<1
+
+
+def test_percentages_outside_band_distinguish_batch_and_evaluable_time():
+    d, b = fixture_data(minutes=4, pv=21, sp=20)
+    d.signals['PV'] = d.signals['PV'].iloc[:3]
+    r = analyze(d, b, Rules())
+    m = r['metrics']
+    assert m['above_hours'] == pytest.approx(2 / 60)
+    assert m['above_pct_evaluable'] == pytest.approx(100)
+    assert m['above_pct_batch'] == pytest.approx(50)
+    assert m['below_pct_batch'] == pytest.approx(0)
+    assert m['outside_pct_batch'] == pytest.approx(50)
+    from termico.ai import thermal_conclusions, report_markdown
+    evidence = payload(r, [])
+    assert '50.00 % del tiempo total del batch' in thermal_conclusions(evidence)
+    assert 'Conclusiones térmicas' in report_markdown(evidence)
+
+def test_percentages_below_and_no_evaluable_coverage():
+    d, b = fixture_data(minutes=4, pv=19, sp=20)
+    m = analyze(d, b, Rules())['metrics']
+    assert m['below_pct_batch'] == pytest.approx(100)
+    assert m['outside_pct_evaluable'] == pytest.approx(100)
+    d.signals['SP']['value'] = 0
+    m = analyze(d, b, Rules())['metrics']
+    assert m['outside_pct_batch'] is None
+    assert m['outside_pct_evaluable'] is None
+
+
+def test_curtain_travel_counts_both_directions_and_excludes_gaps():
+    d, b = fixture_data(minutes=4)
+    b['end'] = pd.Timestamp(b['end']) + pd.Timedelta(minutes=1)
+    d.signals['Fresco']['value'] = [0, 50, 100, 50, 0]
+    d.signals['Retorno']['value'] = [100, 50, 0, 50, 100]
+    r = analyze(d, b, Rules())
+    assert r['metrics']['fresco_travel_m'] == pytest.approx(2.0)
+    assert r['metrics']['retorno_travel_m'] == pytest.approx(2.0)
+    assert r['metrics']['curtain_travel_difference_m'] == pytest.approx(0)
+    d.signals['Fresco'] = d.signals['Fresco'].drop(index=2)
+    m = analyze(d, b, Rules())['metrics']
+    assert m['fresco_travel_m'] == pytest.approx(1.0)
+    assert m['fresco_travel_coverage_pct'] == pytest.approx(40)
+    assert m['curtain_travel_difference_m'] == pytest.approx(1.0)
+
+def test_curtain_travel_missing_data_cannot_be_compared():
+    d, b = fixture_data(minutes=4)
+    d.signals['Fresco'] = d.signals['Fresco'].iloc[:1]
+    r = analyze(d, b, Rules())
+    assert r['metrics']['fresco_travel_m'] is None
+    assert r['metrics']['curtain_travel_difference_m'] is None
+    from termico.ai import travel_conclusions, report_markdown
+    evidence = payload(r, [])
+    assert 'No hay suficientes registros' in travel_conclusions(evidence)
+    assert 'Recorrido de cortinas' in report_markdown(evidence)

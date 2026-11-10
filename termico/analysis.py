@@ -65,6 +65,19 @@ def _events(segments: pd.DataFrame, column: str, kind: str, minutes: float):
         event['prioridad']='Alta' if kind=='Sobre 22 °C' else ('Media' if kind=='Sobre tolerancia' else 'Revisión')
     return events
 
+def curtain_travel(frame: pd.DataFrame, max_gap: float, total_seconds: float) -> dict:
+    # Distancia mínima observada: suma los movimientos entre registros cercanos.
+    if len(frame) < 2:
+        return {'meters': None, 'coverage_pct': 0.0, 'gaps': 0}
+    elapsed = frame.time.diff().dt.total_seconds()
+    delta = frame.value.diff().abs()
+    valid = elapsed.gt(0) & elapsed.le(max_gap)
+    return {
+        'meters': float(delta[valid].sum()) / 100 if valid.any() else None,
+        'coverage_pct': 100 * float(elapsed[valid].sum()) / total_seconds,
+        'gaps': int(elapsed.gt(max_gap).sum()),
+    }
+
 def analyze(data: Dataset, batch, rules: Rules) -> dict:
     if rules.max_gap<=0 or rules.tolerance<0 or rules.event_minutes<0:
         raise ValueError('Las reglas de análisis no son válidas.')
@@ -126,9 +139,26 @@ def analyze(data: Dataset, batch, rules: Rules) -> dict:
         joint_coverage_pct=100*valid_seconds/total, off_hours=off_seconds/3600,
         unknown_hours=max(0,total-valid_seconds-off_seconds)/3600,
         within_pct=100*float(seconds[within].sum())/valid_seconds if valid_seconds else None,
+        above_hours=float(seconds[above].sum())/3600,
+        below_hours=float(seconds[below].sum())/3600,
+        above_pct_evaluable=100*float(seconds[above].sum())/valid_seconds if valid_seconds else None,
+        below_pct_evaluable=100*float(seconds[below].sum())/valid_seconds if valid_seconds else None,
+        outside_pct_evaluable=100*float(seconds[above|below].sum())/valid_seconds if valid_seconds else None,
+        above_pct_batch=100*float(seconds[above].sum())/total if valid_seconds else None,
+        below_pct_batch=100*float(seconds[below].sum())/total if valid_seconds else None,
+        outside_pct_batch=100*float(seconds[above|below].sum())/total if valid_seconds else None,
         mae=mae,hot_minutes=float(seconds[hot].sum())/60,
         curtain_hours=float(seconds[curtain_ok].sum())/3600,
         curtain_bad_minutes=float(seconds[curtain_bad].sum())/60)
+    for role in ('Fresco', 'Retorno'):
+        travel = curtain_travel(raw[role], rules.max_gap, total)
+        prefix = role.lower()
+        metrics[f'{prefix}_travel_m'] = travel['meters']
+        metrics[f'{prefix}_travel_coverage_pct'] = travel['coverage_pct']
+        metrics[f'{prefix}_travel_gaps'] = travel['gaps']
+    fresh = metrics['fresco_travel_m']
+    returned = metrics['retorno_travel_m']
+    metrics['curtain_travel_difference_m'] = abs(fresh - returned) if fresh is not None and returned is not None else None
     events=[]
     for col,kind in [('above','Sobre tolerancia'),('below','Bajo tolerancia'),('hot','Sobre 22 °C'),('curtain_bad','Cortinas fuera de complementariedad')]:
         events.extend(_events(segments,col,kind,rules.event_minutes))
@@ -151,4 +181,5 @@ def payload(result: dict, annotations: list) -> dict:
         'eventos_mayores':events.to_dict('records'),'eventos_totales':len(result['events']),
         'anotaciones_usuario':annotations[:50],
         'metodo':'PV y feedback: interpolación lineal solo entre muestras separadas como máximo por max_gap. SP: retención acotada a max_gap. Huecos no se contabilizan. Duraciones estimadas; no son mediciones continuas.',
-        'max_gap_segundos':result['rules']['expected_seconds']*result['rules']['gap_factor']}
+        'max_gap_segundos':result['rules']['expected_seconds']*result['rules']['gap_factor'],
+        'metodo_recorrido': 'Cada punto porcentual equivale a 0,01 m. Se suman los cambios absolutos entre muestras consecutivas separadas por no más de max_gap, sin interpolar tramos faltantes. La diferencia absoluta compara dos recorridos observados con posible cobertura distinta.'}

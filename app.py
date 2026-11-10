@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from termico.data import TAGS, manifest, load_folder, load_zip, batch_catalog
 from termico.analysis import Rules, analyze, payload
 from termico.charts import figure
-from termico.ai import generate_report, report_markdown
+from termico.ai import generate_report, report_markdown, thermal_conclusions, travel_conclusions
 from termico.notes import load_notes, save_notes
 
 ROOT=Path(__file__).resolve().parent
@@ -121,6 +121,10 @@ if page=='Resumen':
             value=fmt(s['min'])+' – '+fmt(s['max'])+unit if s['count'] else 'Sin datos'
             st.metric(label,value,border=True)
     chart_pair(result,notes)
+    st.subheader('Recorrido de las cortinas')
+    st.write(travel_conclusions(evidence))
+    st.subheader('Tiempo fuera de rango')
+    st.write(thermal_conclusions(evidence))
     if result['extrema']['PV']['max'] is not None and result['extrema']['PV']['max']>22:
         st.warning(f"Se registró una temperatura de hasta {result['extrema']['PV']['max']:.1f} °C, superior a 22 °C. La duración solo puede estimarse donde existe cobertura válida.")
     with st.container(horizontal=True):
@@ -170,6 +174,10 @@ elif page=='Eventos':
                 save_notes(ROOT/'local/anotaciones',batch_key,[n for i,n in enumerate(notes) if i!=idx]); st.rerun()
 
 elif page=='Análisis con IA':
+    st.subheader('Recorrido de las cortinas')
+    st.write(travel_conclusions(evidence))
+    st.subheader('Conclusiones térmicas calculadas')
+    st.write(thermal_conclusions(evidence))
     st.info('Se enviarán a OpenAI métricas, hasta 20 eventos y hasta 50 anotaciones del batch seleccionado. No se envían los archivos históricos completos. La solicitud utiliza tu cuenta de API.')
     with st.expander('Configuración de OpenAI',expanded=not bool(os.getenv('OPENAI_API_KEY'))):
         api_key=st.text_input('Clave de API · solo para esta sesión',type='password',key='api_key_input',
