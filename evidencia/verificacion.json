@@ -1,6 +1,6 @@
 {
-  "fecha": "2026-11-09T22:43:58.759300-03:00",
-  "pruebas": "...............                                                          [100%]\n15 passed in 15.58s",
+  "fecha": "2026-11-13T09:40:28.487639-03:00",
+  "pruebas": "...................                                                      [100%]\n============================== warnings summary ===============================\ntests/test_analysis.py::test_curtain_travel_counts_both_directions_and_excludes_gaps\n  tests\\test_analysis.py:159: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.\n    b['end'] = pd.Timestamp(b['end']) + pd.Timedelta(minutes=1)\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n19 passed, 1 warning in 23.27s",
   "archivos": 291,
   "batches": [
     {
@@ -24,18 +24,35 @@
     "off_hours": 0.0,
     "unknown_hours": 107.92388888888888,
     "within_pct": 46.92230070635721,
+    "above_hours": 0.09027777777777778,
+    "below_hours": 0.05583333333333333,
+    "above_pct_evaluable": 32.79515640766902,
+    "below_pct_evaluable": 20.282542885973765,
+    "outside_pct_evaluable": 53.07769929364279,
+    "above_pct_batch": 0.08343666643561128,
+    "below_pct_batch": 0.051602369087870366,
+    "outside_pct_batch": 0.13503903552348165,
     "mae": 1.3942893982349083,
     "hot_minutes": 0.9166666666666666,
     "curtain_hours": 0.05722222222222222,
     "curtain_bad_minutes": 0.0,
+    "fresco_travel_m": 8.15,
+    "fresco_travel_coverage_pct": 1.2225397094350183,
+    "fresco_travel_gaps": 194,
+    "retorno_travel_m": 8.67,
+    "retorno_travel_coverage_pct": 1.5516652674979525,
+    "retorno_travel_gaps": 219,
+    "curtain_travel_difference_m": 0.5199999999999996,
     "thermal_events": 0
   },
-  "carga_local_segundos": 2.6207954999999856,
+  "carga_local_segundos": 1.8197115999646485,
   "optimizacion": {
     "comparacion": "JSON de todas las muestras del batch frente a resumen de evidencia enviado a IA",
     "json_muestras_bytes": 353076,
-    "json_resumen_bytes": 3006,
-    "reduccion_bytes_pct": 99.14862522516398
+    "json_resumen_bytes": 3867,
+    "reduccion_bytes_pct": 98.90476837847942
   },
-  "api_real": "Pendiente de configurar y probar con la clave del usuario; contrato verificado con cliente simulado."
+  "api_real": "Pendiente de configurar y probar con la clave del usuario; contrato verificado con cliente simulado.",
+  "commit_codigo_verificado": "88c81a8",
+  "entorno_verificado": "Archivos exportados desde el commit local, ejecutados con el entorno Python ya instalado y sin clave de API."
 }

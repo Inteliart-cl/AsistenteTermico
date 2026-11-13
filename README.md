@@ -1,20 +1,26 @@
 # Asistente de análisis térmico de germinación
 
-Aplicación local para revisar la temperatura del grano en la nave N5, organizada por batch de carga a carga. Streamlit presenta los datos y calcula los indicadores; OpenAI interpreta un resumen de evidencia cuando el usuario lo solicita.
+Aplicación interactiva en Streamlit para revisar el control térmico del grano durante la germinación en la nave N5. Organiza los datos históricos por lote, desde una carga hasta la siguiente.
 
-## Abrir y ejecutar en VS Code
+- Compara la temperatura medida con la consigna y muestra la posición de las cortinas de aire fresco y retorno.
+- Calcula el tiempo fuera de la banda térmica, identifica las desviaciones y muestra qué parte del lote se pudo evaluar.
+- Estima el recorrido acumulado de ambas cortinas y su diferencia a partir de los registros disponibles.
+- Permite anotar volteos y otros eventos operativos, y descargar los resultados del lote.
+- A solicitud del usuario, OpenAI interpreta los indicadores y genera un informe con hallazgos y verificaciones sugeridas.
 
-1. Abre `AsistenteTermico.code-workspace` o esta carpeta en VS Code.
-2. En la terminal PowerShell, ejecuta `./iniciar.ps1`. El entorno de este equipo ya está preparado.
-3. En **Análisis con IA → Configuración de OpenAI**, escribe la clave en el campo protegido. Permanece en esa sesión y no se guarda en los archivos. Pulsa **Generar informe con OpenAI**.
+## Ejecutar desde una copia nueva en Windows
 
-Si llevas el proyecto a otro equipo, instala Python 3.12 o superior y ejecuta primero `./instalar.ps1`. Si la configuración de PowerShell impide scripts, usa directamente:
+Clona el repositorio o descarga y extrae su ZIP. Instala Python 3.12 y abre en VS Code la carpeta que contiene `app.py`. Ejecuta estos comandos en la terminal PowerShell:
 
 ```powershell
-./.venv/Scripts/python.exe -m streamlit run app.py
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-lock.txt
+.\.venv\Scripts\python.exe -m streamlit run app.py
 ```
 
-También puedes iniciar la configuración **Asistente térmico · Streamlit** desde el panel de ejecución de VS Code, con la extensión oficial de Python instalada.
+Abre la dirección que indique la terminal. Selecciona el batch `26310` para revisar las tendencias, los tiempos fuera de rango y el recorrido de las cortinas.
+
+Para probar la integración, abre **Análisis con IA → Configuración de OpenAI**, ingresa tu propia clave en el campo protegido y pulsa **Generar informe con OpenAI**. Usa **Descargar informe** para guardar el resultado en Markdown. Puedes recorrer el resumen y los eventos antes de ingresar la clave.
 
 ## Configurar OpenAI de forma persistente (opcional)
 
@@ -84,4 +90,4 @@ Estructura: `app.py` (interfaz), `termico/data.py` (importación), `termico/anal
 
 La aplicación demuestra interacción, integración con API y apoyo a un problema laboral. La validación queda respaldada por las pruebas y evidencia descargable. Se incluyen optimizaciones de carga mediante caché y envío de un resumen acotado a la IA; para acreditar una mejora experimental, debe medirse y documentarse la comparación correspondiente. No se ajustan PID, no se escribe al PLC y no se atribuye causalidad a las correlaciones observadas.
 
-`evidencia/verificacion.json` conserva el resultado de las 15 pruebas y una comparación reproducible: para el batch 26310, el JSON de muestras ocupa 353.076 bytes y el resumen de evidencia 3.006 bytes (reducción de tamaño del 99,15 %). Esto mide tamaño de entrada, no ahorro de tokens o costo real ni calidad de las respuestas. Puedes regenerarlo ejecutando `./.venv/Scripts/python.exe verificar.py`.
+`evidencia/verificacion.json` conserva el resultado de las 19 pruebas y una comparación reproducible: para el batch 26310, el JSON de muestras ocupa 353.076 bytes y el resumen de evidencia 3.867 bytes (reducción de tamaño del 98,90 %). Esto mide tamaño de entrada, no ahorro de tokens o costo real ni calidad de las respuestas. Puedes regenerarlo ejecutando `./.venv/Scripts/python.exe verificar.py`.

@@ -153,10 +153,29 @@ elif page=='Eventos':
     st.subheader('Anotaciones de volteos y contexto')
     st.caption('Las anotaciones se conservan localmente, contextualizan el análisis y no excluyen eventos ni alteran las métricas.')
     if notes: st.dataframe(pd.DataFrame(notes),hide_index=True,alt='Anotaciones manuales del batch')
+    # El selector de Streamlit trabaja con precisión de minutos.
+    earliest = pd.Timestamp(batch.start).ceil('min').to_pydatetime()
+    latest = pd.Timestamp(batch.end).floor('min').to_pydatetime()
+    use_calendar = earliest < latest
     with st.form('annotation_form'):
         kind=st.selectbox('Tipo',['Volteo','Contexto operativo'],key='note_type')
-        begin=st.text_input('Inicio · AAAA-MM-DD HH:MM',value=f'{batch.start:%Y-%m-%d %H:%M:%S}',key='note_start')
-        finish=st.text_input('Fin · AAAA-MM-DD HH:MM',value=f'{batch.start:%Y-%m-%d %H:%M:%S}',key='note_end')
+        if use_calendar:
+            st.caption('Usa el calendario o escribe con el teclado. Fecha DD/MM/AAAA y hora HH:MM en formato de 24 horas.')
+            start_col, end_col = st.columns(2)
+            with start_col:
+                begin = st.datetime_input(
+                    'Inicio', value=earliest, min_value=earliest, max_value=latest,
+                    format='DD/MM/YYYY', step=60, required=True, key=f'note_start_{batch_key}',
+                )
+            with end_col:
+                finish = st.datetime_input(
+                    'Fin', value=None, min_value=earliest, max_value=latest,
+                    format='DD/MM/YYYY', step=60, required=True, key=f'note_end_{batch_key}',
+                )
+        else:
+            st.caption('Este batch requiere precisión de segundos. Escribe la fecha y hora local.')
+            begin = st.text_input('Inicio · AAAA-MM-DD HH:MM:SS', value=f'{batch.start:%Y-%m-%d %H:%M:%S}', key=f'note_start_text_{batch_key}')
+            finish = st.text_input('Fin · AAAA-MM-DD HH:MM:SS', value=f'{batch.end:%Y-%m-%d %H:%M:%S}', key=f'note_end_text_{batch_key}')
         comment=st.text_area('Descripción',max_chars=1000,key='note_text')
         save=st.form_submit_button('Guardar anotación',key='save_note')
     if save:

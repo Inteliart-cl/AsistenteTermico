@@ -22,7 +22,28 @@ def test_navigation_and_api_key_gate(monkeypatch):
 def test_annotation_invalid_interval_is_rejected():
     app=AppTest.from_file(str(Path(__file__).resolve().parents[1]/'app.py'),default_timeout=40).run()
     app.radio(key='page').set_value('Eventos').run()
-    app.text_input(key='note_start').set_value('2020-01-01 00:00')
+    batch_key = app.selectbox(key='batch_key').value
+    begin = app.datetime_input(key=f'note_start_{batch_key}').value
+    app.datetime_input(key=f'note_end_{batch_key}').set_value(begin)
     app.button(key='save_note').click().run()
     assert not app.exception
     assert any('intervalo válido' in e.value for e in app.error)
+
+
+def test_annotation_saves_dates_selected_in_form(monkeypatch):
+    from datetime import timedelta
+
+    saved = []
+    monkeypatch.setattr('termico.notes.load_notes', lambda *args: [])
+    monkeypatch.setattr('termico.notes.save_notes', lambda path, key, notes: saved.extend(notes))
+    app = AppTest.from_file(str(Path(__file__).resolve().parents[1] / 'app.py'), default_timeout=40).run()
+    app.radio(key='page').set_value('Eventos').run()
+    batch_key = app.selectbox(key='batch_key').value
+    begin = app.datetime_input(key=f'note_start_{batch_key}').value + timedelta(minutes=7)
+    finish = begin + timedelta(minutes=13)
+    app.datetime_input(key=f'note_start_{batch_key}').set_value(begin)
+    app.datetime_input(key=f'note_end_{batch_key}').set_value(finish)
+    app.button(key='save_note').click().run()
+    assert not app.exception
+    assert not app.error
+    assert [(note['inicio'], note['fin']) for note in saved] == [(begin.isoformat(), finish.isoformat())]
