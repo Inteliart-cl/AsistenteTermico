@@ -7,9 +7,11 @@ def test_navigation_and_api_key_gate(monkeypatch):
     app=AppTest.from_file(str(Path(__file__).resolve().parents[1]/'app.py'),default_timeout=40).run()
     assert not app.exception
     assert '26310' in app.selectbox(key='batch_key').value
-    for page in ['Eventos','Datos y validación','Análisis con IA','Resumen']:
+    for page in ['Eventos','Datos y validación','Modelo térmico','Análisis con IA','Resumen']:
         app.radio(key='page').set_value(page).run()
         assert not app.exception
+        if page == 'Modelo térmico':
+            assert any('Ventanas inusuales' == metric.label for metric in app.metric)
     app.button(key='analyze_batch').click().run()
     assert not app.exception
     assert app.radio(key='page').value=='Análisis con IA'

@@ -1,4 +1,5 @@
 from dataclasses import replace
+from datetime import timedelta
 from types import SimpleNamespace
 from unittest.mock import Mock
 import pandas as pd
@@ -102,6 +103,18 @@ def test_ai_uses_structured_response_no_raw_records_and_no_storage():
     assert client.responses.parse.call_args.kwargs['store'] is False
     assert client.responses.parse.call_args.kwargs['text_format'] is Report
 
+def test_generated_numbers_cannot_override_measured_metrics():
+    report = Report(resumen='Se observó un 13.5 % fuera de rango.', hallazgos=[],
+                    hipotesis=[], verificaciones=[], limitaciones=[])
+    client = Mock()
+    client.responses.parse.return_value = SimpleNamespace(output_parsed=report, usage=None)
+    with pytest.raises(ValueError, match='devolvió cifras'):
+        generate_report({}, 'clave-ficticia', 'gpt-4.1-mini', client)
+    measured = generate_report({}, 'clave-ficticia', 'gpt-4.1-mini', client, metrics_only=True)
+    assert measured['contenido'] is None
+    assert measured['latencia_s'] >= 0
+
+
 def test_missing_key_and_incomplete_output_not_fake_success():
     with pytest.raises(ValueError): generate_report({},'', 'model')
     client=Mock()
@@ -156,7 +169,7 @@ def test_percentages_below_and_no_evaluable_coverage():
 
 def test_curtain_travel_counts_both_directions_and_excludes_gaps():
     d, b = fixture_data(minutes=4)
-    b['end'] = pd.Timestamp(b['end']) + pd.Timedelta(minutes=1)
+    b['end'] = pd.Timestamp(b['end']) + timedelta(minutes=1)
     d.signals['Fresco']['value'] = [0, 50, 100, 50, 0]
     d.signals['Retorno']['value'] = [100, 50, 0, 50, 100]
     r = analyze(d, b, Rules())

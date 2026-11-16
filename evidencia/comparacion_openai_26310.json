@@ -1,0 +1,53 @@
+{
+  "batch": "26310",
+  "metodo": "Una respuesta por variante en el mismo modelo. La referencia adjunta las muestras a la evidencia.",
+  "modelo_solicitado": "gpt-4.1-mini",
+  "linea_base": {
+    "modelo": "gpt-4.1-mini-2025-04-14",
+    "id_respuesta": "resp_0de5ab486e9fe74f016afb6b324fe887d2ab0f9e3dd7b5a157",
+    "latencia_s": 19.381710099987686,
+    "generado": "2026-11-16T17:44:53.136527-03:00",
+    "uso": {
+      "input_tokens": 156614,
+      "input_tokens_details": {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 0
+        }
+      },
+      "output_tokens": 1005,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 157619
+    }
+  },
+  "optimizado": {
+    "modelo": "gpt-4.1-mini-2025-04-14",
+    "id_respuesta": "resp_073e9309c7009fc3016afb6b27a09087d2abde94832268aae4",
+    "latencia_s": 14.461328099947423,
+    "generado": "2026-11-16T17:44:33.743239-03:00",
+    "uso": {
+      "input_tokens": 2163,
+      "input_tokens_details": {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0,
+        "cache_write_tokens_details": {
+          "ttl_12h_tokens": 0,
+          "ttl_30m_tokens": 0
+        }
+      },
+      "output_tokens": 916,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 3079
+    }
+  },
+  "reduccion_tokens_entrada_pct": 98.61889741657835,
+  "nota_latencia": "Los tiempos corresponden a una ejecución por variante y pueden variar al repetirla.",
+  "version_instrucciones": "Comparación real inicial, antes de trasladar todas las cifras al informe determinista.",
+  "revision_contenido": "Ambas respuestas iniciales confundieron los denominadores. Se conservan sus mediciones de API y se adjunta por separado un informe real generado con las instrucciones corregidas."
+}

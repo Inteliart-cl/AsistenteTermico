@@ -14,6 +14,7 @@ from termico.analysis import Rules, analyze, payload
 from termico.charts import figure
 from termico.ai import generate_report, report_markdown, thermal_conclusions, travel_conclusions
 from termico.notes import load_notes, save_notes
+from termico.ml import evaluate
 
 ROOT=Path(__file__).resolve().parent
 load_dotenv(ROOT/'.env',override=False)
@@ -28,6 +29,10 @@ def zip_data(blob): return load_zip(blob)
 @st.cache_data(ttl=300,max_entries=12,show_spinner='Calculando cobertura y eventos…')
 def calculate(fingerprint,batch_key,rules_tuple,_data,_batch):
     return analyze(_data,_batch,Rules(**dict(rules_tuple)))
+
+@st.cache_data(ttl=300, max_entries=12, show_spinner='Evaluando el modelo térmico…')
+def calculate_ml(fingerprint, batch_key, max_gap, _pv, _batch, _catalog):
+    return evaluate(_pv, _batch.start, _batch.end, _catalog, max_gap)
 
 def goto_ai():
     st.session_state['page']='Análisis con IA'
@@ -82,7 +87,7 @@ with st.sidebar:
         format_func=lambda key: f"{catalog.loc[catalog.key==key,'batch'].iloc[0]} · {catalog.loc[catalog.key==key,'start'].iloc[0]:%d/%m/%Y}")
     batch=catalog.loc[catalog.key==batch_key].iloc[0]
     st.caption(f"{batch.start:%d/%m %H:%M} → {batch.end:%d/%m %H:%M}")
-    st.radio('Explorar',['Resumen','Eventos','Análisis con IA','Datos y validación'],key='page')
+    st.radio('Explorar',['Resumen','Eventos','Modelo térmico','Análisis con IA','Datos y validación'],key='page')
     with st.expander('Reglas de análisis'):
         st.caption('La cadencia real aún debe confirmarse. Se propone inicialmente 30 segundos y un hueco máximo de 90 segundos.')
         expected=st.number_input('Intervalo esperado del histórico (segundos)',min_value=1.0,max_value=3600.0,value=30.0,step=1.0,key='cadence')
@@ -103,6 +108,8 @@ try:
 except ValueError as exc:
     st.warning(str(exc)); notes=[]
 evidence=payload(result,notes)
+ml_summary, predictions = calculate_ml(data.fingerprint, batch_key, rules.max_gap, data.signals['PV'], batch, catalog)
+evidence['machine_learning'] = ml_summary
 signature=hashlib.sha256(json.dumps(evidence,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
 ai_report=st.session_state['reports'].get(signature)
 m=result['metrics']
@@ -192,6 +199,28 @@ elif page=='Eventos':
             if st.button('Eliminar anotación seleccionada',key='delete_note'):
                 save_notes(ROOT/'local/anotaciones',batch_key,[n for i,n in enumerate(notes) if i!=idx]); st.rerun()
 
+elif page=='Modelo térmico':
+    st.caption('Pronóstico a cinco minutos de la temperatura del grano. El modelo aprende de lotes anteriores y se evalúa con el lote seleccionado.')
+    if ml_summary is None:
+        st.info('Faltan ventanas continuas en el lote evaluado o en los lotes anteriores. Prueba con el batch 26310.')
+    else:
+        columns = st.columns(3)
+        columns[0].metric('Error medio del modelo', fmt(ml_summary['mae_modelo_c'], ' °C', 3))
+        columns[1].metric('Error al mantener la última temperatura', fmt(ml_summary['mae_persistencia_c'], ' °C', 3))
+        columns[2].metric('Ventanas inusuales', f"{ml_summary['ventanas_inusuales']} de {ml_summary['ventanas_evaluadas']}")
+        references = ', '.join(ml_summary['lotes_referencia'])
+        st.caption(f"Lotes de referencia {references} · Umbral calibrado {ml_summary['umbral_residuo_c']:.3f} °C de error absoluto")
+        st.caption('Cada resultado corresponde a una ventana evaluable. Las señales inusuales requieren revisión operativa.')
+        chart = predictions.set_index('hora_objetivo')[['pv_futura', 'pronóstico']].rename(
+            columns={'pv_futura': 'Temperatura observada', 'pronóstico': 'Temperatura pronosticada'}
+        )
+        # Los minutos sin pronóstico quedan como huecos en la tendencia.
+        chart = chart.asfreq('min')
+        st.line_chart(chart, y_label='Temperatura (°C)', alt='Temperatura observada y pronóstico a cinco minutos')
+        st.dataframe(ml_summary['ejemplos'], hide_index=True, alt='Ventanas inusuales con mayor error de pronóstico')
+        st.download_button('Descargar pronósticos CSV', predictions.to_csv(index=False).encode('utf-8-sig'),
+                           f'pronosticos_{batch.batch}.csv', 'text/csv', key='ml_download')
+
 elif page=='Análisis con IA':
     st.subheader('Recorrido de las cortinas')
     st.write(travel_conclusions(evidence))
@@ -217,6 +246,8 @@ elif page=='Análisis con IA':
     if ai_report:
         content=ai_report['contenido']
         st.caption(f"Informe generado · {ai_report['modelo']} · {ai_report['generado']}")
+        usage = ai_report.get('uso') or {}
+        st.caption(f"Tokens de entrada: {usage.get('input_tokens', 'ND')} · Tokens de salida: {usage.get('output_tokens', 'ND')} · Tiempo: {ai_report['latencia_s']:.2f} s")
         with st.container(border=True):
             st.subheader('Resumen del análisis'); st.markdown(content['resumen'])
         st.subheader('Hallazgos respaldados por los datos')

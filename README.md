@@ -71,6 +71,7 @@ Los gráficos muestran líneas finas sin marcadores y suavizado visual. La consi
 
 - **Resumen:** extremos reales, tendencias, cobertura e indicadores del tiempo evaluable; botón de interpretación con IA.
 - **Eventos:** excursiones breves y persistentes, selección de intervalo, CSV y anotaciones.
+- **Modelo térmico:** pronóstico a cinco minutos, comparación con la última lectura, ventanas inusuales y CSV de predicciones.
 - **Análisis con IA:** vista previa de evidencia, clave protegida, modelo configurable e informe real. El informe se conserva solo durante la sesión y queda ligado a los datos, reglas y anotaciones con que fue generado.
 - **Datos y validación:** intervalos observados, problemas de importación, catálogo de batches y registros originales.
 - Descargas: informe Markdown y evidencia JSON con reglas, cobertura y huella SHA-256. Los archivos no contienen claves. Las anotaciones se guardan en `local/anotaciones` y se incluyen al exportar; los informes de IA no se guardan automáticamente al disco.
@@ -86,8 +87,24 @@ Las pruebas verifican umbrales, duración estricta, integración por tiempo, hue
 
 Estructura: `app.py` (interfaz), `termico/data.py` (importación), `termico/analysis.py` (cálculos), `termico/charts.py` (gráficos), `termico/ai.py` (OpenAI e informes), `termico/notes.py` (anotaciones), `tests` (verificación).
 
-## Alcance para la evaluación U3M3
+## Modelo predictivo y validación
 
-La aplicación demuestra interacción, integración con API y apoyo a un problema laboral. La validación queda respaldada por las pruebas y evidencia descargable. Se incluyen optimizaciones de carga mediante caché y envío de un resumen acotado a la IA; para acreditar una mejora experimental, debe medirse y documentarse la comparación correspondiente. No se ajustan PID, no se escribe al PLC y no se atribuye causalidad a las correlaciones observadas.
+El modelo aprende a pronosticar la temperatura del grano a cinco minutos mediante regresión Ridge. Usa la temperatura disponible al emitir el pronóstico y sus cambios en el último minuto y los últimos cinco. Cada ventana usa lecturas anteriores o iguales a su hora de referencia y se descarta si cruza un hueco largo. La consigna queda disponible para el análisis determinista de tolerancia.
 
-`evidencia/verificacion.json` conserva el resultado de las 19 pruebas y una comparación reproducible: para el batch 26310, el JSON de muestras ocupa 353.076 bytes y el resumen de evidencia 3.867 bytes (reducción de tamaño del 98,90 %). Esto mide tamaño de entrada, no ahorro de tokens o costo real ni calidad de las respuestas. Puedes regenerarlo ejecutando `./.venv/Scripts/python.exe verificar.py`.
+El modelo se entrena con el primer 75 % de las ventanas de lotes cerrados anteriores. El tramo restante calibra el percentil 99 del error absoluto con separación temporal entre ambos tramos. El lote seleccionado se reserva para evaluación. El batch 26310 produjo 1.211 ventanas evaluables. El error absoluto medio fue 0,232 °C con el modelo y 0,222 °C con la última lectura como predicción. Se detectaron 31 ventanas con error superior al umbral calibrado. Son candidatos para revisión del histórico. La sensibilidad se comprueba inyectando +2 °C en la lectura objetivo de las ventanas que el modelo no había señalado. Sin etiquetas de fallas reales, esa prueba solo mide respuesta a la perturbación artificial.
+
+Ejecuta `./.venv/Scripts/python.exe verificar.py` para reproducir las pruebas y los resultados guardados en `evidencia/verificacion.json`.
+
+## Medición de la optimización mediante OpenAI
+
+La aplicación envía un resumen con métricas, eventos y resultados del modelo. Los números del informe salen de los cálculos de la aplicación. OpenAI interpreta los hallazgos en términos cualitativos. El flujo de comparación usa el batch 26310 y solicita dos informes al mismo modelo con las mismas instrucciones. La referencia añade todas las muestras de las señales al mismo resumen. La variante optimizada envía solo el resumen. La evidencia consigna los tokens reportados por la API y la latencia de cada solicitud.
+
+Con una clave válida en `.env` o en el entorno, ejecuta:
+
+```powershell
+./.venv/Scripts/python.exe medir_openai.py --comparar
+```
+
+El comando realiza dos llamadas a OpenAI con tu cuenta. Guarda `comparacion_openai_26310.json` e `informe_openai_26310.md` en `evidencia/`. Cada latencia es una observación puntual.
+
+La comparación inicial registró 156.614 tokens de entrada con las muestras y 2.163 con el resumen, una reducción del 98,62 %. Los tiempos fueron 19,38 s y 14,46 s, respectivamente. Al revisar el contenido se encontraron errores al interpretar los denominadores. Por eso, la aplicación ahora escribe las cifras desde sus propios cálculos. El informe guardado corresponde a una nueva solicitud real con ese formato.

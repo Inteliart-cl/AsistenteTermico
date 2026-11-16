@@ -1,6 +1,6 @@
 {
-  "fecha": "2026-11-13T09:40:28.487639-03:00",
-  "pruebas": "...................                                                      [100%]\n============================== warnings summary ===============================\ntests/test_analysis.py::test_curtain_travel_counts_both_directions_and_excludes_gaps\n  tests\\test_analysis.py:159: DeprecationWarning: The 'generic' unit for NumPy timedelta is deprecated, and will raise an error in the future. This includes implicit conversion of bare integers (e.g. `+ 1`). Please use a specific unit instead.\n    b['end'] = pd.Timestamp(b['end']) + pd.Timedelta(minutes=1)\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n19 passed, 1 warning in 23.27s",
+  "fecha": "2026-11-16T17:49:32.018754-03:00",
+  "pruebas": ".......................                                                  [100%]\n23 passed in 31.35s",
   "archivos": 291,
   "batches": [
     {
@@ -45,14 +45,63 @@
     "curtain_travel_difference_m": 0.5199999999999996,
     "thermal_events": 0
   },
-  "carga_local_segundos": 1.8197115999646485,
+  "carga_local_segundos": 4.512927499949001,
   "optimizacion": {
     "comparacion": "JSON de todas las muestras del batch frente a resumen de evidencia enviado a IA",
     "json_muestras_bytes": 353076,
-    "json_resumen_bytes": 3867,
-    "reduccion_bytes_pct": 98.90476837847942
+    "json_resumen_bytes": 4786,
+    "reduccion_bytes_pct": 98.64448447359774
   },
-  "api_real": "Pendiente de configurar y probar con la clave del usuario; contrato verificado con cliente simulado.",
-  "commit_codigo_verificado": "88c81a8",
-  "entorno_verificado": "Archivos exportados desde el commit local, ejecutados con el entorno Python ya instalado y sin clave de API."
+  "validacion_ml": {
+    "modelo": "Regresión Ridge",
+    "horizonte_min": 5,
+    "lotes_referencia": [
+      "26304"
+    ],
+    "ventanas_entrenamiento": 378,
+    "ventanas_calibracion": 122,
+    "ventanas_evaluadas": 1211,
+    "umbral_residuo_c": 0.9055327385668619,
+    "mae_modelo_c": 0.23216615932910112,
+    "mae_persistencia_c": 0.22246077621800167,
+    "ventanas_inusuales": 31,
+    "prueba_artificial": {
+      "aumento_c": 2,
+      "detectadas": 1180,
+      "evaluadas": 1180
+    },
+    "ejemplos": [
+      {
+        "hora_objetivo": "2026-11-08T04:56:00",
+        "pv": 20.9,
+        "pronostico": 19.246,
+        "error_abs_c": 1.654
+      },
+      {
+        "hora_objetivo": "2026-11-04T10:39:00",
+        "pv": 22.3,
+        "pronostico": 20.858,
+        "error_abs_c": 1.442
+      },
+      {
+        "hora_objetivo": "2026-11-04T10:38:00",
+        "pv": 22.4,
+        "pronostico": 20.995,
+        "error_abs_c": 1.405
+      },
+      {
+        "hora_objetivo": "2026-11-08T04:52:00",
+        "pv": 18.9,
+        "pronostico": 20.259,
+        "error_abs_c": 1.359
+      },
+      {
+        "hora_objetivo": "2026-11-04T10:37:00",
+        "pv": 22.2,
+        "pronostico": 20.858,
+        "error_abs_c": 1.342
+      }
+    ]
+  },
+  "api_real": "La verificación local usa un cliente simulado. La medición real se obtiene con medir_openai.py --comparar."
 }
